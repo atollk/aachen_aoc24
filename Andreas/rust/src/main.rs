@@ -1,5 +1,8 @@
+use std::fs;
+
 mod day0;
+mod day1;
 
 fn main() {
-    day0::day0_main();
+    day1::main();
 }
