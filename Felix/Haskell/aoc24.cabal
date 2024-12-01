@@ -1,0 +1,16 @@
+cabal-version:      3.0
+name:               aoc24
+version:            0.1.0.0
+build-type:         Simple
+
+common warnings
+    ghc-options: -Wall
+
+executable day1
+    import:           warnings
+    main-is:          Day1.hs
+    build-depends:    base ^>=4.17.2.1,
+                      containers
+    hs-source-dirs:   app
+    other-modules:    Utils
+    default-language: Haskell2010
