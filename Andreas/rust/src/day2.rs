@@ -53,6 +53,7 @@ pub fn main() {
 
     let safe_levels1: HashSet<_> = input.iter().filter(|level| is_safe(level, 0)).collect();
     let safe_levels2: HashSet<_> = input.iter().filter(|level| is_safe(level, 1)).collect();
+    // Mir ist aufgefallen dass meine Lösung für Tag 2 gar nicht richtig funktioniert, z.B: für "88 91 90 91 93", aber scheinbar hatte ich Glück mit dem Input :^)
 
     println!("Star 1: {:?}", safe_levels1.len());
     println!("Star 2: {:?}", safe_levels2.len());
