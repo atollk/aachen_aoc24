@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::fs;
+use std::sync::LazyLock;
 
 #[derive(Debug)]
 struct WordMatrix {
@@ -37,8 +38,9 @@ impl WordMatrix {
     }
 }
 
-fn count_xmas_from(matrix: &WordMatrix, (x, y): (i32, i32), word: &str) -> i32 {
-    let deltas = [
+
+static SLIDE_DELTAS_ALL: LazyLock<[(i32, i32); 8]> = LazyLock::new(|| {
+    [
         (0, 1),
         (1, 0),
         (0, -1),
@@ -47,11 +49,23 @@ fn count_xmas_from(matrix: &WordMatrix, (x, y): (i32, i32), word: &str) -> i32 {
         (-1, 1),
         (1, -1),
         (-1, -1),
-    ];
-    let mut count = 0;
-    'outer: for delta in deltas {
-        let mut x = x;
-        let mut y = y;
+    ]
+});
+
+static SLIDE_DELTAS_CROSS: LazyLock<[(i32, i32); 4]> = LazyLock::new(|| {
+    [
+        (1, 1),
+        (-1, 1),
+        (1, -1),
+        (-1, -1),
+    ]
+});
+
+fn find_words_from(matrix: &WordMatrix, (sx, sy): (i32, i32), word: &str, slide_deltas: &[(i32, i32)]) -> Vec<((i32, i32), (i32, i32))> {
+    let mut findings = Vec::new();
+    'outer: for delta in slide_deltas.iter() {
+        let mut x = sx;
+        let mut y = sy;
         for c in word.chars() {
             if matrix.get(x, y) != Some(c) {
                 continue 'outer;
@@ -59,19 +73,41 @@ fn count_xmas_from(matrix: &WordMatrix, (x, y): (i32, i32), word: &str) -> i32 {
             x += delta.0;
             y += delta.1;
         }
-        count += 1;
+        findings.push(((sx, sy), (x - delta.0, y - delta.1)));
     }
-    count
+    findings
+}
+
+fn find_all_words(matrix: &WordMatrix, word: &str, slide_deltas: &[(i32, i32)]) -> Vec<((i32, i32), (i32, i32))> {
+    let mut words = Vec::new();
+    for x in 0..matrix.width {
+        for y in 0..matrix.height {
+            words.append(&mut find_words_from(&matrix, (x, y), word, slide_deltas));
+        }
+    }
+    words
+}
+
+fn star2(matrix: &WordMatrix) {
+    let mas_words = find_all_words(matrix, "MAS", SLIDE_DELTAS_CROSS.as_ref());
+    let mut x_count = 0;
+    for i in 0..mas_words.len() {
+        for j in (i+1)..mas_words.len() {
+            let (astart, aend) = mas_words[i];
+            let amid = ((astart.0 + aend.0) / 2, (astart.1 + aend.1) / 2);
+            let (bstart, bend) = mas_words[j];
+            let bmid = ((bstart.0 + bend.0) / 2, (bstart.1 + bend.1) / 2);
+            if amid == bmid {
+                x_count += 1;
+            }
+        }
+    }
+
+    println!("Star 2: {}", x_count);
 }
 
 pub(crate) fn main() {
     let matrix = WordMatrix::new("day4_input.txt");
-    let mut xmas_count = 0;
-    for x in 0..matrix.width {
-        for y in 0..matrix.height {
-            xmas_count += count_xmas_from(&matrix, (x, y), "XMAS");
-        }
-    }
-
-    println!("{}", xmas_count);
+    println!("Star 1: {}", find_all_words(&matrix, "XMAS", SLIDE_DELTAS_ALL.as_ref()).len());
+    star2(&matrix);
 }
