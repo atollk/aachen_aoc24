@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
-	"strings"
-	"strconv"
-	"bufio"
 	"slices"
+	"strconv"
+	"strings"
 )
 
 func check(e error) {
@@ -17,7 +17,7 @@ func check(e error) {
 
 func main() {
 	rules, manuals := parse()
-	
+
 	sum1 := 0
 	sum2 := 0
 	for _, manual := range manuals {
@@ -32,7 +32,7 @@ func main() {
 	fmt.Println("Part 2: ", sum2)
 }
 
-func parse() (rules map[int][]int, manuals [][]int)  {
+func parse() (rules map[int][]int, manuals [][]int) {
 	file, err := os.Open("input.txt")
 	check(err)
 	defer file.Close()
@@ -42,9 +42,9 @@ func parse() (rules map[int][]int, manuals [][]int)  {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		var l, r int
-		_, err = fmt.Sscanf(scanner.Text(), "%d|%d" , &l, &r)
+		_, err = fmt.Sscanf(scanner.Text(), "%d|%d", &l, &r)
 		if err != nil {
-			break;
+			break
 		}
 		rule := rules[l]
 		rule = append(rule, r)
@@ -66,7 +66,7 @@ func parseInts(line string) (ints []int) {
 	return
 }
 
-func validate(manual []int, rules map[int][]int) bool {	
+func validate(manual []int, rules map[int][]int) bool {
 	for i, v := range manual {
 		for _, rule := range rules[v] {
 			if slices.Contains(manual[:i], rule) {

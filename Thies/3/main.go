@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
-	"strconv"
-    "regexp"
 	"fmt"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -18,12 +18,12 @@ func main() {
 	file, err := os.ReadFile("input.txt")
 	check(err)
 
-	s := string(file)	
+	s := string(file)
 	fmt.Println("Part 1: ", mul(s))
 	fmt.Println("Part 2: ", do(s))
 }
 
-func mul(s string) int {	
+func mul(s string) int {
 	regex, err := regexp.Compile(`mul\((\d{1,3}),(\d{1,3})\)`)
 	check(err)
 	matches := regex.FindAllStringSubmatch(s, -1)
@@ -34,7 +34,7 @@ func mul(s string) int {
 		check(err)
 		b, err := strconv.Atoi(string(match[2]))
 		check(err)
-		mul += a*b
+		mul += a * b
 	}
 	return mul
 }

@@ -50,7 +50,7 @@ func part2(s string) {
 	matches += searchPattern(s, fmt.Sprintf(`M.S.{%d}A.{%d}M.S`, width-1, width-1))
 	matches += searchPattern(s, fmt.Sprintf(`S.M.{%d}A.{%d}S.M`, width-1, width-1))
 	matches += searchPattern(s, fmt.Sprintf(`S.S.{%d}A.{%d}M.M`, width-1, width-1))
-	
+
 	fmt.Println("Part 2: ", matches)
 }
 
