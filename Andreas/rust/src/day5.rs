@@ -2,8 +2,6 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::mem::swap;
-use std::ops::IndexMut;
 
 #[derive(Debug)]
 struct Input {
