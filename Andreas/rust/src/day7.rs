@@ -20,6 +20,9 @@ impl Equation {
                 Operation::Multiplication => {
                     result *= operand;
                 }
+                Operation::Concatenation => {
+                    result = result * 10i64.pow(operand.ilog10() + 1) + operand;
+                }
             }
         }
         result
@@ -47,16 +50,22 @@ fn parse_input(filename: &str) -> Vec<Equation> {
 enum Operation {
     Addition,
     Multiplication,
+    Concatenation,
 }
 
 struct OperationsIter {
     ops: Option<Vec<Operation>>,
     len: usize,
+    include_concat: bool,
 }
 
 impl OperationsIter {
-    fn new(len: usize) -> OperationsIter {
-        OperationsIter { ops: None, len }
+    fn new(len: usize, include_concat: bool) -> OperationsIter {
+        OperationsIter {
+            ops: None,
+            len,
+            include_concat,
+        }
     }
 }
 
@@ -77,6 +86,15 @@ impl LendingIterator for OperationsIter {
                         break;
                     }
                     Operation::Multiplication => {
+                        if self.include_concat {
+                            *op = Operation::Concatenation;
+                            exhausted = false;
+                            break;
+                        } else {
+                            Operation::Addition
+                        };
+                    }
+                    Operation::Concatenation => {
                         *op = Operation::Addition;
                     }
                 }
@@ -93,25 +111,36 @@ impl LendingIterator for OperationsIter {
     }
 }
 
-fn count_valid_operands(equation: &Equation) -> usize {
-    let mut iter = OperationsIter::new(equation.operands.len() - 1);
-    let mut count = 0;
-    while let Some(ops) = iter.next() {
+fn has_valid_operands(equation: &Equation, mut operations_iter: OperationsIter) -> bool {
+    while let Some(ops) = operations_iter.next() {
         let result = equation.eval(ops);
         if result == equation.sum {
-            count += 1;
+            return true;
         }
     }
-    count
+    false
+}
+
+fn sum_valid_equations(input: &[Equation], make_iter: &dyn Fn(&Equation) -> OperationsIter) -> i64 {
+    input
+        .iter()
+        .filter(|eq| has_valid_operands(eq, make_iter(eq)))
+        .map(|eq| eq.sum)
+        .sum()
 }
 
 pub(crate) fn main() {
     let input = parse_input("day7_input.txt");
-    let result: i64 = input
-        .iter()
-        .filter(|eq| count_valid_operands(eq) > 0)
-        .map(|eq| eq.sum)
-        .sum();
-
-    println!("{}", result);
+    println!(
+        "Star 1: {}",
+        sum_valid_equations(&input, &|eq| {
+            OperationsIter::new(eq.operands.len() - 1, false)
+        })
+    );
+    println!(
+        "Star 2: {}",
+        sum_valid_equations(&input, &|eq| {
+            OperationsIter::new(eq.operands.len() - 1, true)
+        })
+    );
 }
