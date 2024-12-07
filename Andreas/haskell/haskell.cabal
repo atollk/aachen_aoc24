@@ -64,7 +64,9 @@ executable haskell
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.17.2.1
+    build-depends:    
+        base ^>=4.17.2.1,
+        haskell-debug-adapter ==0.0.40.0
 
     -- Directories containing source files.
     hs-source-dirs:   app
