@@ -1,3 +1,6 @@
 .idea
 Felix/Haskell/dist-newstyle
 Felix/Haskell/data
+Felix/Rust/*/target
+Felix/Rust/*/Cargo.lock
+Felix/Rust/*/input.txt
