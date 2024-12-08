@@ -1,2 +1,4 @@
 .idea
+.vscode
 /haskell/dist-newstyle/
+rust/*_input.txt
