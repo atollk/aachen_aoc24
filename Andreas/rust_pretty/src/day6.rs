@@ -4,6 +4,9 @@ use itertools::Itertools;
 use leptos::prelude::*;
 use std::collections::HashSet;
 use std::iter::Iterator;
+use std::thread;
+use std::time::Duration;
+use leptos::task::spawn_local;
 
 #[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 struct Pos(i32, i32);
@@ -128,6 +131,12 @@ pub(crate) fn main() {
 #[component]
 pub(crate) fn App() -> impl IntoView {
     let (value, set_value) = signal(0);
+
+    let x = spawn_local(async {
+        for i in 1..10 {
+            leptos::logging::log!("hi number {i} from the spawned thread!");
+        }
+    });
 
     // thanks to https://tailwindcomponents.com/component/blue-buttons-example for the showcase layout
     view! {
