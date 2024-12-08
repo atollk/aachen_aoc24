@@ -6,7 +6,3 @@ edition = "2021"
 [dependencies]
 itertools = "0.13.0"
 leptos = { version = "0.7.0", features = ["csr"] }
-stylers = "1.0.0-alpha"
-
-[build-dependencies]
-stylers = {  version = "*" }

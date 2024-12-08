@@ -3,9 +3,7 @@
 use itertools::Itertools;
 use leptos::prelude::*;
 use std::collections::HashSet;
-use std::fs;
 use std::iter::Iterator;
-use stylers::style;
 
 #[derive(Debug, Eq, Hash, PartialEq, Copy, Clone)]
 struct Pos(i32, i32);
@@ -129,30 +127,30 @@ pub(crate) fn main() {
 
 #[component]
 pub(crate) fn App() -> impl IntoView {
-    let (map_base, map_state) = parse_input();
-    
-    let style = style! {
-        div {
-            border: 1px solid black;
-            margin: 25px 50px 75px 100px;
-            background-color: lightblue;
-        }
-    };
+    let (value, set_value) = signal(0);
 
-    view! { class=style,
-        X
-        {(0..map_base.width)
-            .map(|x| {
-                view! {
-                    <div>
-                        {(0..map_base.height)
-                            .map(|y| {
-                                view! { <div>{x} {y}</div> }
-                            }).collect::<Vec<_>>()}
-                    </div>
-                }
-            }).collect::<Vec<_>>()}
-        Y
+    // thanks to https://tailwindcomponents.com/component/blue-buttons-example for the showcase layout
+    view! {
+        <h1>Leptos + Tailwindcss</h1>
+        <main>
+            <div class="bg-gradient-to-tl from-blue-800 to-blue-500 text-white font-mono flex flex-col min-h-screen">
+                <div class="flex flex-row-reverse flex-wrap m-auto">
+                    <button on:click=move |_| set_value.update(|value| *value += 1) class="rounded px-3 py-2 m-1 border-b-4 border-l-2 shadow-lg bg-blue-700 border-blue-800 text-white">
+                        "+"
+                    </button>
+                    <button class="rounded px-3 py-2 m-1 border-b-4 border-l-2 shadow-lg bg-blue-800 border-blue-900 text-white">
+                        {value}
+                    </button>
+                    <button
+                        on:click=move |_| set_value.update(|value| *value -= 1)
+                        class="rounded px-3 py-2 m-1 border-b-4 border-l-2 shadow-lg bg-blue-700 border-blue-800 text-white"
+                        class:invisible=move || {value.get() < 1}
+                    >
+                        "-"
+                    </button>
+                </div>
+            </div>
+        </main>
     }
 }
 
