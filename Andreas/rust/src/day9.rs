@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use crate::day9::Block::Empty;
 use itertools::{repeat_n, Itertools};
 use std::fs;
 
@@ -42,7 +41,7 @@ fn expand_fs(block_sizes: &[u8]) -> Vec<Block> {
         .collect()
 }
 
-fn defragment(blocks: &mut [Block]) {
+fn defragment_by_block(blocks: &mut [Block]) {
     let mut first_empty = blocks.iter().position(|b| *b == Block::Empty).unwrap();
     let mut last_file = blocks.len() - 1;
     loop {
@@ -60,23 +59,84 @@ fn defragment(blocks: &mut [Block]) {
     }
 }
 
+fn defragment_by_file(blocks: &mut [Block]) {
+    //println!("{}", pretty_print_blocks(blocks),);
+    let mut last_file_start = blocks.len();
+    loop {
+        // Shift to the next file to attempt to move.
+        let mut last_file_end = last_file_start - 1;
+        while last_file_end > 0 && blocks[last_file_end] == Block::Empty {
+            last_file_end -= 1;
+        }
+        if last_file_end == 0 {
+            break;
+        }
+        last_file_start = last_file_end - 1;
+        while last_file_start > 0 && blocks[last_file_start] == blocks[last_file_end] {
+            last_file_start -= 1;
+        }
+        if last_file_start == 0 {
+            break;
+        }
+        last_file_end += 1;
+        last_file_start += 1;
+
+        // Find the first free block to move to.
+        let mut first_empty_start = 1;
+        let mut first_empty_end = 1;
+        while first_empty_end < blocks.len() {
+            if first_empty_end - first_empty_start >= last_file_end - last_file_start
+            {
+                break;
+            }
+            first_empty_end += 1;
+            if let Some(Block::File(_)) = blocks.get(first_empty_end - 1) {
+                first_empty_start = first_empty_end;
+            }
+        }
+
+        if first_empty_end - first_empty_start >= last_file_end - last_file_start && first_empty_start < last_file_start {
+            for i in 0..(last_file_end - last_file_start) {
+                blocks.swap(first_empty_start + i, last_file_start + i);
+            }
+        }
+
+        /*println!(
+            "{} {}-{} {}-{}",
+            pretty_print_blocks(blocks),
+            first_empty_start,
+            first_empty_end,
+            last_file_start,
+            last_file_end,
+        );*/
+    }
+}
+
 fn checksum(blocks: &[Block]) -> usize {
     blocks
         .iter()
-        .filter_map(|b| match b {
-            Empty => None,
-            Block::File(i) => Some(*i),
-        })
         .enumerate()
-        .map(|(i, j)| i * j)
+        .filter_map(|(i, b)| match b {
+            Block::Empty => None,
+            Block::File(id) => Some(id * i),
+        })
         .sum()
+}
+
+fn star1(input: &[u8]) {
+    let mut blocks = expand_fs(&input);
+    defragment_by_block(&mut blocks);
+    println!("Star 1: {}", checksum(&blocks));
+}
+
+fn star2(input: &[u8]) {
+    let mut blocks = expand_fs(&input);
+    defragment_by_file(&mut blocks);
+    println!("Star 2: {}", checksum(&blocks));
 }
 
 pub(crate) fn main() {
     let input = parse_input("day9_input.txt");
-
-    let mut blocks = expand_fs(&input);
-    defragment(&mut blocks);
-
-    println!("{}", checksum(&blocks));
+    star1(&input);
+    star2(&input);
 }
