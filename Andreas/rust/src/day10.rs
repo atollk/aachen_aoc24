@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 use std::fs;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -134,7 +134,7 @@ fn star1(input: &Input, paths: &HashMap<Pos, HashSet<Vec<Pos>>>) {
 fn star2(input: &Input, paths: &HashMap<Pos, HashSet<Vec<Pos>>>) {
     let zero_paths_sum: usize = paths
         .iter()
-        .filter(|(pos, paths)| input.get(**pos).unwrap() == 0)
+        .filter(|(pos, _)| input.get(**pos).unwrap() == 0)
         .map(|(_, paths)| paths.len())
         .sum();
 
