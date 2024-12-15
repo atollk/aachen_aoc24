@@ -1,12 +1,15 @@
-use crate::grid::{Direction, Grid};
+use crate::grid::{Direction, Grid, Position};
 use itertools::Itertools;
 use std::cmp::PartialEq;
-use std::fs;
+use std::collections::HashSet;
+use std::{fs, iter};
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 enum GridTile {
     Empty,
     Box,
+    BigBoxLeft,
+    BigBoxRight,
     Wall,
     Robot,
 }
@@ -29,8 +32,10 @@ fn parse_input(filename: &str) -> Input {
             .filter(|c| !c.is_whitespace())
             .map(|c| match c {
                 '.' => GridTile::Empty,
-                '#' => GridTile::Wall,
                 'O' => GridTile::Box,
+                '[' => GridTile::BigBoxLeft,
+                ']' => GridTile::BigBoxRight,
+                '#' => GridTile::Wall,
                 '@' => GridTile::Robot,
                 _ => unreachable!(),
             })
@@ -59,28 +64,67 @@ fn pp_tile(grid_tile: &GridTile) -> char {
     match grid_tile {
         GridTile::Empty => '.',
         GridTile::Box => 'O',
+        GridTile::BigBoxLeft => '[',
+        GridTile::BigBoxRight => ']',
         GridTile::Wall => '#',
         GridTile::Robot => '@',
     }
 }
 
 fn apply_move(grid: &mut Grid<GridTile>, direction: Direction) {
+    fn affected_by_moving_entity(
+        grid: &Grid<GridTile>,
+        direction: Direction,
+        position: Position,
+        step_sideways: bool,
+    ) -> Option<Vec<Position>> {
+        let entity = *grid.get(position).unwrap();
+        let mut result = match entity {
+            GridTile::Empty => Some(Vec::new()),
+            GridTile::Box | GridTile::BigBoxLeft | GridTile::BigBoxRight | GridTile::Robot => {
+                let mut rec =
+                    affected_by_moving_entity(grid, direction, position.move_to(direction), true);
+                if let Some(v) = &mut rec {
+                    v.push(position);
+                }
+                rec
+            }
+            GridTile::Wall => None,
+        };
+        if result.is_some()
+            && step_sideways
+            && (direction == Direction::Up || direction == Direction::Down)
+            && (entity == GridTile::BigBoxLeft || entity == GridTile::BigBoxRight)
+        {
+            let neighbour_pos = if entity == GridTile::BigBoxLeft {
+                position.move_to(Direction::Right)
+            } else {
+                position.move_to(Direction::Left)
+            };
+            let neighbour_move = affected_by_moving_entity(grid, direction, neighbour_pos, false);
+            if neighbour_move.is_none() {
+                None
+            } else {
+                let mut x = result.unwrap();
+                x.extend(neighbour_move.unwrap());
+                Some(x)
+            }
+        } else {
+            result
+        }
+    }
+
     let robot_pos = grid.find(&GridTile::Robot).exactly_one().ok().unwrap();
-    let mut steps = 0;
-    while [GridTile::Robot, GridTile::Box]
-        .contains(grid.get(robot_pos.move_by(direction, steps)).unwrap())
-    {
-        steps += 1;
+    let affected_positions = affected_by_moving_entity(grid, direction, robot_pos, true);
+    if let Some(affected_positions) = affected_positions {
+        let old_grid = grid.clone(); // slow as hell
+        for &pos in affected_positions.iter() {
+            grid.set(pos, GridTile::Empty);
+        }
+        for &pos in affected_positions.iter() {
+            grid.set(pos.move_to(direction), *old_grid.get(pos).unwrap());
+        }
     }
-    if *grid.get(robot_pos.move_by(direction, steps)).unwrap() == GridTile::Wall {
-        // Blocked by wall
-        return;
-    }
-    for i in 2..=steps {
-        grid.set(robot_pos.move_by(direction, i), GridTile::Box);
-    }
-    grid.set(robot_pos.move_by(direction, 1), GridTile::Robot);
-    grid.set(robot_pos.move_by(direction, 0), GridTile::Empty);
 }
 
 fn gps_coordinate_sum(grid: &Grid<GridTile>) -> u32 {
