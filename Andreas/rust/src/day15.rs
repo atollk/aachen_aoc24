@@ -1,6 +1,6 @@
 use crate::grid::{Direction, Grid, Position};
 use itertools::Itertools;
-use std::cmp::PartialEq;
+use std::cmp::{min, PartialEq};
 use std::collections::HashSet;
 use std::{fs, iter};
 
@@ -127,19 +127,59 @@ fn apply_move(grid: &mut Grid<GridTile>, direction: Direction) {
     }
 }
 
-fn gps_coordinate_sum(grid: &Grid<GridTile>) -> u32 {
-    grid.find(&GridTile::Box)
+fn gps_coordinate_sum(grid: &Grid<GridTile>, grid_width: u32) -> u32 {
+    let simple_boxes: u32 = grid
+        .find(&GridTile::Box)
         .map(|pos| pos.x + pos.y * 100)
-        .sum()
+        .sum();
+    let wide_boxes: u32 = grid
+        .find(&GridTile::BigBoxLeft)
+        .map(|pos| pos.x + pos.y * 100)
+        .sum();
+    simple_boxes + wide_boxes
+}
+
+fn widen_grid(grid: Grid<GridTile>) -> Grid<GridTile> {
+    let entities = grid
+        .entities
+        .iter()
+        .flat_map(|entity| match entity {
+            GridTile::Empty => [GridTile::Empty, GridTile::Empty],
+            GridTile::Box => [GridTile::BigBoxLeft, GridTile::BigBoxRight],
+            GridTile::BigBoxLeft | GridTile::BigBoxRight => unreachable!(),
+            GridTile::Wall => [GridTile::Wall, GridTile::Wall],
+            GridTile::Robot => [GridTile::Robot, GridTile::Empty],
+        })
+        .collect();
+    Grid {
+        width: grid.width * 2,
+        height: grid.height,
+        entities,
+    }
+}
+
+fn star1(input: &Input) {
+    let mut grid = input.start_grid.clone();
+    println!("{}", grid.pretty_print(&pp_tile));
+    for &direction in input.move_plan.iter() {
+        apply_move(&mut grid, direction);
+    }
+    println!("{}", grid.pretty_print(&pp_tile));
+    println!("Star 1: {}", gps_coordinate_sum(&grid, grid.width));
+}
+
+fn star2(input: &Input) {
+    let mut grid = widen_grid(input.start_grid.clone());
+    println!("{}", grid.pretty_print(&pp_tile));
+    for &direction in input.move_plan.iter() {
+        apply_move(&mut grid, direction);
+    }
+    println!("{}", grid.pretty_print(&pp_tile));
+    println!("Star 2: {}", gps_coordinate_sum(&grid, grid.width));
 }
 
 pub(crate) fn main() {
     let input = parse_input("day15_input.txt");
-    let mut grid = input.start_grid.clone();
-    println!("{}", grid.pretty_print(&pp_tile));
-    for direction in input.move_plan {
-        apply_move(&mut grid, direction);
-    }
-    println!("{}", grid.pretty_print(&pp_tile));
-    println!("Star 1: {}", gps_coordinate_sum(&grid));
+    star1(&input);
+    star2(&input);
 }
