@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use itertools::Itertools;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::fs;
