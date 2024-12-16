@@ -1,8 +1,9 @@
+#![allow(dead_code)]
+
 use crate::grid::{Direction, Grid, Position};
 use itertools::Itertools;
-use std::cmp::{min, PartialEq};
-use std::collections::HashSet;
-use std::{fs, iter};
+use std::cmp::PartialEq;
+use std::fs;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 enum GridTile {
@@ -79,7 +80,7 @@ fn apply_move(grid: &mut Grid<GridTile>, direction: Direction) {
         step_sideways: bool,
     ) -> Option<Vec<Position>> {
         let entity = *grid.get(position).unwrap();
-        let mut result = match entity {
+        let result = match entity {
             GridTile::Empty => Some(Vec::new()),
             GridTile::Box | GridTile::BigBoxLeft | GridTile::BigBoxRight | GridTile::Robot => {
                 let mut rec =
@@ -127,7 +128,7 @@ fn apply_move(grid: &mut Grid<GridTile>, direction: Direction) {
     }
 }
 
-fn gps_coordinate_sum(grid: &Grid<GridTile>, grid_width: u32) -> u32 {
+fn gps_coordinate_sum(grid: &Grid<GridTile>) -> u32 {
     let simple_boxes: u32 = grid
         .find(&GridTile::Box)
         .map(|pos| pos.x + pos.y * 100)
@@ -165,7 +166,7 @@ fn star1(input: &Input) {
         apply_move(&mut grid, direction);
     }
     println!("{}", grid.pretty_print(&pp_tile));
-    println!("Star 1: {}", gps_coordinate_sum(&grid, grid.width));
+    println!("Star 1: {}", gps_coordinate_sum(&grid));
 }
 
 fn star2(input: &Input) {
@@ -175,7 +176,7 @@ fn star2(input: &Input) {
         apply_move(&mut grid, direction);
     }
     println!("{}", grid.pretty_print(&pp_tile));
-    println!("Star 2: {}", gps_coordinate_sum(&grid, grid.width));
+    println!("Star 2: {}", gps_coordinate_sum(&grid));
 }
 
 pub(crate) fn main() {
