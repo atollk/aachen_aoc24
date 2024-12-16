@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Copy, Clone, Ord, PartialOrd)]
 pub struct Position {
     pub(crate) x: u32,
     pub(crate) y: u32,
@@ -41,6 +41,67 @@ pub enum Direction {
     Right,
 }
 
+impl Direction {
+    pub fn all() -> [Direction; 4] {
+        [
+            Direction::Down,
+            Direction::Up,
+            Direction::Left,
+            Direction::Right,
+        ]
+    }
+
+    pub fn turn90(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Right,
+            Direction::Down => Direction::Left,
+            Direction::Left => Direction::Up,
+            Direction::Right => Direction::Down,
+        }
+    }
+
+    pub fn turn180(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Down,
+            Direction::Down => Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+        }
+    }
+
+    pub fn turn270(&self) -> Direction {
+        match self {
+            Direction::Up => Direction::Left,
+            Direction::Down => Direction::Right,
+            Direction::Left => Direction::Down,
+            Direction::Right => Direction::Up,
+        }
+    }
+}
+
+impl From<char> for Direction {
+    fn from(value: char) -> Self {
+        match value {
+            '^' => Direction::Up,
+            '<' => Direction::Left,
+            '>' => Direction::Right,
+            'v' => Direction::Down,
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<Direction> for char {
+    fn from(value: Direction) -> Self {
+        match value {
+            Direction::Up => '^',
+            Direction::Down => 'v',
+            Direction::Left => '<',
+            Direction::Right => '>',
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Grid<T> {
     pub width: u32,
@@ -49,13 +110,34 @@ pub struct Grid<T> {
 }
 
 impl<T: PartialEq> Grid<T> {
-    pub fn is_in_range(&self, position: Position) -> bool {
-        position.x < self.width && position.y < self.height
+    pub fn parse_from_string<F>(string: &str, mapper: F) -> Result<Grid<T>, ()>
+    where
+        F: Fn(char) -> T,
+    {
+        let width = string.lines().next().ok_or(())?.chars().count() as u32;
+        let height = string.lines().count() as u32;
+        let entities: Vec<_> = string
+            .lines()
+            .flat_map(|line| line.chars().map(|c| mapper(c)))
+            .collect();
+        if width * height != entities.len() as u32 {
+            Err(())
+        } else {
+            Ok(Grid {
+                width,
+                height,
+                entities,
+            })
+        }
     }
 
     pub fn get(&self, position: Position) -> Option<&T> {
-        self.entities
-            .get((position.x + position.y * self.width) as usize)
+        if position.x > self.width || position.y > self.height {
+            None
+        } else {
+            self.entities
+                .get((position.x + position.y * self.width) as usize)
+        }
     }
 
     pub fn set(&mut self, position: Position, new: T) {
