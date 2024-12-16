@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
-use std::cmp::min;
 use crate::grid::{Direction, Grid, Position};
 use itertools::Itertools;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::fs::canonicalize;
+
+type PathNode = (Position, Direction);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 enum Tile {
@@ -13,6 +13,17 @@ enum Tile {
     Wall,
     Start,
     End,
+}
+
+impl From<Tile> for char {
+    fn from(value: Tile) -> Self {
+        match value {
+            Tile::Empty => '.',
+            Tile::Wall => '#',
+            Tile::Start => 'S',
+            Tile::End => 'E',
+        }
+    }
 }
 
 fn parse_input(filename: &str) -> Grid<Tile> {
@@ -27,40 +38,7 @@ fn parse_input(filename: &str) -> Grid<Tile> {
         .unwrap()
 }
 
-fn print_path_from_costs(grid: &Grid<Tile>, costs: &HashMap<(Position, Direction), Option<u32>>) {
-    for y in 0..grid.height {
-        for x in 0..grid.width {
-            let pos = Position { x, y };
-            let tile = *grid.get(pos).unwrap();
-            let c = if tile == Tile::Wall {
-                '#'
-            } else {
-                let best_direction = Direction::all()
-                    .iter()
-                    .map(|&d| {
-                        (
-                            d,
-                            costs
-                                .get(&(pos.move_to(d), d))
-                                .unwrap_or(&None)
-                                .unwrap_or(u32::MAX),
-                        )
-                    })
-                    .min_by_key(|(_, cost)| *cost)
-                    .unwrap();
-                if best_direction.1 == u32::MAX {
-                    '.'
-                } else {
-                    char::from(best_direction.0)
-                }
-            };
-            print!("{}", c);
-        }
-        println!();
-    }
-}
-
-fn find_shortest_path(grid: &Grid<Tile>) -> u32 {
+fn find_shortest_path(grid: &Grid<Tile>) -> (HashMap<PathNode, Vec<PathNode>>, u32) {
     let start = grid.find(&Tile::Start).exactly_one().ok().unwrap();
     let end = grid.find(&Tile::End).exactly_one().ok().unwrap();
 
@@ -106,11 +84,67 @@ fn find_shortest_path(grid: &Grid<Tile>) -> u32 {
         .into_iter()
         .min()
         .unwrap();
-    min_cost
+    (prevs, min_cost)
+}
+
+fn path_cost(path: &[PathNode]) -> u32 {
+    path.windows(2)
+        .map(|window| {
+            let (&a, &b) = window.iter().collect_tuple().unwrap();
+            if a.0 == b.0 {
+                1000
+            } else {
+                1
+            }
+        })
+        .sum()
+}
+
+fn collect_best_paths(
+    grid: &Grid<Tile>,
+    prevs: &HashMap<PathNode, Vec<PathNode>>,
+    min_cost: u32,
+) -> HashSet<Vec<PathNode>> {
+    fn collect_from(
+        node: PathNode,
+        prevs: &HashMap<PathNode, Vec<PathNode>>,
+    ) -> Vec<Vec<PathNode>> {
+        if let Some(previous_nodes) = prevs.get(&node) {
+            previous_nodes
+                .iter()
+                .flat_map(|prev_node| {
+                    collect_from(*prev_node, prevs).into_iter().map(|mut path| {
+                        path.push(node);
+                        path
+                    })
+                })
+                .collect()
+        } else {
+            vec![vec![node]]
+        }
+    }
+
+    let end = grid.find(&Tile::End).exactly_one().ok().unwrap();
+    let mut result = HashSet::new();
+    for dir in Direction::all() {
+        result.extend(collect_from((end, dir), prevs));
+    }
+    result
+        .into_iter()
+        .filter(|path| path_cost(path) == min_cost)
+        .collect()
 }
 
 pub(crate) fn main() {
     let input = parse_input("day16_input.txt");
-    let shortest_path = find_shortest_path(&input);
-    println!("{:?}", shortest_path);
+    let (prevs, shortest_path) = find_shortest_path(&input);
+    println!("Star 1: {:?}", shortest_path);
+
+    let best_paths = collect_best_paths(&input, &prevs, shortest_path);
+    let on_a_best_path: HashSet<_> = best_paths
+        .iter()
+        .flat_map(|p| p)
+        .map(|node| node.0)
+        .collect();
+    println!("Star 2: {}", on_a_best_path.len());
 }
