@@ -1,5 +1,5 @@
 use ::std::fs::File;
-use std::collections::{BinaryHeap, HashSet};
+use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 use std::io::{self, prelude::*, BufReader};
 
 use itertools::Itertools;
@@ -91,11 +91,16 @@ impl Pose {
     }
 }
 
-fn find_start(grid: &Vec<Vec<char>>) -> Pose {
+fn find_start(src: char, grid: &Vec<Vec<char>>) -> Pose {
+    let orientation = match src {
+        'S' => Orientation::East,
+        'E' => Orientation::West,
+        _ => panic!(),
+    };
     for i in 0..grid.len() {
         for j in 0..grid[0].len() {
-            if grid[i][j] == 'S' {
-                return Pose::new(Position(i, j), Orientation::East);
+            if grid[i][j] == src {
+                return Pose::new(Position(i, j), orientation);
             }
         }
     }
@@ -106,41 +111,62 @@ fn at(pose: &Pose, grid: &Vec<Vec<char>>) -> char {
     grid[pose.position.0][pose.position.1]
 }
 
-fn solve1(grid: &Vec<Vec<char>>) -> u32 {
-    let start = find_start(&grid);
+fn solve(src: char, dst: char, grid: &Vec<Vec<char>>) -> (u32, HashSet<Position>) {
+    let start = find_start(src, &grid);
 
     let mut heap = BinaryHeap::new();
     heap.push(HeapElem(0, start));
-    let mut visited = HashSet::new();
+    let mut costs = HashMap::new();
+    let mut prev: HashMap<Pose, Vec<Pose>> = HashMap::new();
 
-    let mut target = 0;
+    let mut res = u32::MAX;
+    let mut end = None;
     while !heap.is_empty() {
         let HeapElem(weight, pose) = heap.pop().unwrap();
-        if at(&pose, &grid) == 'E' {
-            return weight;
+        if at(&pose, &grid) == dst {
+            res = res.min(weight);
+            if let None = end {
+                end = Some(pose);
+            }
         }
 
-        if visited.contains(&pose) {
+        if costs.contains_key(&pose) {
             continue;
         }
 
-        visited.insert(pose);
-        target = target.max(weight);
+        costs.insert(pose, weight);
 
         let rotate_ccw_pose = pose.rotate_ccw().advance();
-        if !visited.contains(&rotate_ccw_pose) && !(at(&rotate_ccw_pose, grid) == '#') {
+        if !costs.contains_key(&rotate_ccw_pose) && !(at(&rotate_ccw_pose, grid) == '#') {
             heap.push(HeapElem(weight + 1001, rotate_ccw_pose));
+            prev.entry(rotate_ccw_pose).or_default().push(pose);
         }
         let rotate_cw_pose = pose.rotate_cw().advance();
-        if !visited.contains(&rotate_cw_pose) && !(at(&rotate_cw_pose, grid) == '#') {
+        if !costs.contains_key(&rotate_cw_pose) && !(at(&rotate_cw_pose, grid) == '#') {
             heap.push(HeapElem(weight + 1001, rotate_cw_pose));
+            prev.entry(rotate_cw_pose).or_default().push(pose);
         }
         let advance_pose = pose.advance();
-        if !visited.contains(&advance_pose) && !(at(&advance_pose, grid) == '#') {
+        if !costs.contains_key(&advance_pose) && !(at(&advance_pose, grid) == '#') {
             heap.push(HeapElem(weight + 1, advance_pose));
+            prev.entry(advance_pose).or_default().push(pose);
         }
     }
-    target
+
+    let mut path = HashSet::new();
+    let mut dq: VecDeque<Pose> = VecDeque::new();
+    dq.push_back(end.unwrap());
+    while !dq.is_empty() {
+        for _ in 0..dq.len() {
+            let node = dq.pop_front().unwrap();
+            path.insert(node.position);
+            if let Some(prevs) = prev.get(&node) {
+                dq.extend(prevs);
+            }
+        }
+    }
+
+    (res, path)
 }
 
 fn main() -> io::Result<()> {
@@ -153,7 +179,10 @@ fn main() -> io::Result<()> {
         .take_while(|row| !row.is_empty())
         .collect_vec();
 
-    let res = solve1(&grid);
+    let (_, forward) = solve('S', 'E', &grid);
+    let (res, backward) = solve('E', 'S', &grid);
+
+    println!("{:?}", forward.len().min(backward.len()));
 
     println!("{:?}", res);
 
