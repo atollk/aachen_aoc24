@@ -154,11 +154,15 @@ impl<T: PartialEq> Grid<T> {
             })
     }
 
-    pub fn pretty_print(&self, render: &dyn Fn(&T) -> char) -> String {
+    pub fn pretty_print<F>(&self, render: F) -> String
+    where
+        F: Fn(Position, &T) -> char,
+    {
         let mut result = String::new();
         for y in 0..self.height {
             for x in 0..self.width {
-                result.push(render(self.get(Position { x, y }).unwrap()))
+                let pos = Position { x, y };
+                result.push(render(pos, self.get(pos).unwrap()))
             }
             result.push('\n');
         }

@@ -61,7 +61,7 @@ fn parse_input(filename: &str) -> Input {
     }
 }
 
-fn pp_tile(grid_tile: &GridTile) -> char {
+fn pp_tile(position: Position, grid_tile: &GridTile) -> char {
     match grid_tile {
         GridTile::Empty => '.',
         GridTile::Box => 'O',
