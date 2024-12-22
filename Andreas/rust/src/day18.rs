@@ -2,9 +2,8 @@
 
 use crate::grid::{Direction, Grid, Position};
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 use std::fs;
-use std::iter::Successors;
 
 const GRID_WIDTH: u32 = 71;
 const GRID_HEIGHT: u32 = 71;
@@ -46,7 +45,7 @@ fn star1(corrupted_bytes: &[Position]) {
         width: GRID_WIDTH,
         height: GRID_HEIGHT,
         entities: (0..GRID_WIDTH)
-            .flat_map(|x| (0..GRID_HEIGHT).map(move |y| Direction::Up))
+            .flat_map(|_| (0..GRID_HEIGHT).map(|_| Direction::Up))
             .collect(),
     };
 
