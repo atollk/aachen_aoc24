@@ -31,19 +31,23 @@ pub(crate) fn main() {
     //     println!("{}: {}", n, evolve_secret_number_multi(n, 2000));
     // }
 
-    let buyer_prices: Vec<[u64; STEPS]> = input
+    let buyer_secret_numbers: Vec<[u64; STEPS]> = input
         .iter()
         .map(|n| {
             (0..STEPS)
                 .scan(*n, |state, _| {
-                    let res = Some(*state % 10);
+                    let res = *state;
                     *state = evolve_secret_number(*state);
-                    res
+                    Some(res)
                 })
                 .collect_vec()
                 .try_into()
                 .unwrap()
         })
+        .collect_vec();
+    let buyer_prices: Vec<[u64; STEPS]> = buyer_secret_numbers
+        .iter()
+        .map(|secrets| secrets.map(|i| i % 10))
         .collect_vec();
     let buyer_change_sequences: Vec<[i8; STEPS - 1]> = buyer_prices
         .iter()
@@ -64,9 +68,9 @@ pub(crate) fn main() {
 
     println!(
         "Star 1: {}",
-        buyer_prices
+        buyer_secret_numbers
             .iter()
-            .map(|prices| prices.last().unwrap())
+            .map(|secrets| secrets.last().unwrap())
             .sum::<u64>()
     );
 
