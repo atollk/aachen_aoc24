@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-use gat_lending_iterator::ToLendingIterator;
 use itertools::Itertools;
 use std::cmp::max;
 use std::collections::HashMap;
