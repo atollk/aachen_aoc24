@@ -4,7 +4,6 @@ use itertools::Itertools;
 use std::cmp::{max, min};
 use std::collections::HashSet;
 use std::fs;
-use std::hash::Hash;
 
 #[derive(Debug)]
 struct NetworkMap {

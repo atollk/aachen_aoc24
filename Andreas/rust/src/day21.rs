@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::grid::Position;
 use itertools::Itertools;
 use std::fs;
